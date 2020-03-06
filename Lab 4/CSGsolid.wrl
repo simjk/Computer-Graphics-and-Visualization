@@ -1,0 +1,206 @@
+#VRML V2.0 utf8
+
+# The following EXTERNPROTO definitins remain the same for all FVRML scenes.
+
+EXTERNPROTO FGeometry [
+	exposedField SFString definition
+	exposedField MFFloat parameters
+	exposedField MFInt32 resolution
+	exposedField SFVec3f bboxCenter
+	exposedField SFVec3f bboxSize
+	exposedField SFString type
+	exposedField MFNode	parents
+	exposedField SFVec2f timeSpan
+] "http://www3.ntu.edu.sg/home/assourin/FVRML/FVRML.wrl#FGeometry"
+EXTERNPROTO FMaterial [
+	exposedField SFString diffuseColor
+	exposedField SFString type
+	exposedField MFColor patternColor
+	exposedField MFFloat patternKey
+	exposedField SFString ambientIntensity
+	exposedField SFString emissiveColor
+	exposedField SFString shininess
+	exposedField SFString specularColor
+	exposedField SFString transparency
+	exposedField MFFloat parameters
+	exposedField MFNode	parents
+	exposedField SFVec2f timeSpan
+] "http://www3.ntu.edu.sg/home/assourin/FVRML/FVRML.wrl#FMaterial"
+EXTERNPROTO FTexture3D [
+	exposedField SFString definition
+	exposedField SFString type
+	exposedField MFFloat parameters
+	exposedField MFNode	parents
+	exposedField SFVec2f timeSpan
+] "http://www3.ntu.edu.sg/home/assourin/FVRML/FVRML.wrl#FTexture3D"
+EXTERNPROTO FAppearance [
+	exposedField SFNode	material
+	exposedField SFNode	texture
+	exposedField SFNode	textureTransform
+	exposedField SFNode	texture3D
+	exposedField MFNode	parents
+	eventIn	SFBool refresh
+] "http://www3.ntu.edu.sg/home/assourin/FVRML/FVRML.wrl#FAppearance"
+EXTERNPROTO FShape [
+	exposedField SFNode	geometry
+	exposedField SFNode	appearance
+	exposedField SFString polygonizer
+	exposedField MFNode	parents
+	exposedField SFTime	startTime
+	exposedField SFTime stopTime
+    exposedField SFTime cycleInterval
+    exposedField SFBool	loop
+	exposedField SFBool	enabled
+	eventOut SFTime	cycleTime
+	eventIn SFFloat set_fraction
+	field SFInt32 frames
+] "http://www3.ntu.edu.sg/home/assourin/FVRML/FVRML.wrl#FShape"
+EXTERNPROTO FTransform [
+	exposedField SFString operation
+	exposedField SFString type
+	exposedField SFString polygonizer
+	exposedField MFFloat parameters
+	exposedField SFString center
+	exposedField SFString rotation
+	exposedField SFString scale
+	exposedField SFString scaleOrientation
+	exposedField SFString translation
+	exposedField MFNode children
+	exposedField MFNode	parents
+	eventIn	SFBool refresh
+    exposedField SFVec2f timeSpan
+	exposedField SFTime	startTime
+	exposedField SFTime stopTime
+    exposedField SFTime cycleInterval
+    exposedField SFBool	loop
+	exposedField SFBool	enabled
+	eventOut SFTime	cycleTime
+	eventIn SFFloat set_fraction
+	field SFInt32 frames
+] "http://www3.ntu.edu.sg/home/assourin/FVRML/FVRML.wrl#FTransform"
+
+Background {skyColor 0 0 0}
+
+# External VRML object "coordinate system" is included in the scene
+Inline {url "http://www3.ntu.edu.sg/home/assourin/FVRML/CoordinateAxes.wrl"}
+
+
+FShape {
+geometry FGeometry {
+
+# Function script defining the CSG solid. 
+# Change to some other formulae to see how the solid geometry changes 
+# based on the parameters domain and the sampling resolution defined below
+	definition "function frep(x,y,z,t){
+		cylinder=min(min(0.5^2-x^2-z^2,y),0.65-y);
+		cylinder1=min(min(0.7^2-x^2-z^2,y),0.2-y);
+		
+		hollowCylinder =min(min(0.45^2-x^2-z^2,y),0.5-y);
+		
+		cone=min(((y-1)^2 - (z/0.2)^2 - (x/0.2 + 2.8)^2)-0.5,y/0.4 - 0.5);
+		cone1=min(((y-1)^2 - (z/0.2)^2 - (x/0.2 - 2.8)^2)-0.5,y/0.4 - 0.5);
+		combinedHorn = max(cone,cone1);
+		
+		combinedCylinder= max(cylinder, cylinder1);
+		combinedHCylinder = min(combinedCylinder, -hollowCylinder);
+		combinedHwHwCylinder = max(combinedHCylinder, combinedHorn);
+		
+		ellipsoid=min((1-(x/0.5)^2-(y/0.45)^2-(z/0.55)^2),-y);
+		ellipsoid1=min((1-(x/0.45)^2-(y/0.5)^2-(z/0.5)^2),y);
+		combinedF = max(ellipsoid, ellipsoid1);
+		combinedFnHw2C = max(combinedF, combinedHwHwCylinder);
+		
+		rectangle = 0.1^4 - (x/0.8)^4 - (y/0.2 - 2.2)^4 - (z-0.45)^4;
+		rectangle1 = 0.1^4 - (x/0.2)^4 - (y/0.8 - 0.55)^4 - (z-0.45)^4;
+		
+		combinedCross = max(rectangle, rectangle1);
+		combinedCnFnHw2C = max(combinedFnHw2C, combinedCross);
+		
+		
+		cylinder2=min(min(0.05^2 - (x+0.7)^2 - z^2, y-0.5), 0.7 - y);
+		sphere=0.05^2-(x+0.7)^2-(y-0.7)^2-z^2;
+		combinedcs1 = max(cylinder2, sphere);
+		
+		cylinder3=min(min(0.05^2 - (x+0.7)^2 - (z-0.1)^2, y-0.5), 0.7 - y);
+		sphere1=0.05^2-(x+0.7)^2-(y-0.7)^2-(z-0.1)^2;
+		combinedcs2 = max(cylinder3, sphere1);
+
+		cylinder4=min(min(0.05^2 - (x+0.7)^2 - (z-0.2)^2, y-0.5), 0.7 - y);
+		sphere2=0.05^2-(x+0.7)^2-(y-0.7)^2-(z-0.2)^2;
+		combinedcs3 = max(cylinder4, sphere2);
+		
+		cylinder5=min(min(0.05^2 - (x+0.7)^2 - (z-0.4)^2, y-0.5), 0.7 - y);
+		sphere3=0.05^2-(x+0.7)^2-(y-0.7)^2-(z-0.4)^2;
+		combinedcs4 = max(cylinder5, sphere3);
+		
+		cylinder6=min(min(0.05^2 - (x+0.7)^2 - (z-0.5)^2, y-0.5), 0.7 - y);
+		sphere4=0.05^2-(x+0.7)^2-(y-0.7)^2-(z-0.5)^2;
+		combinedcs5 = max(cylinder6, sphere4);
+		
+		joint = min(min(0.05^2 - (x+0.7)^2 - (y-0.5)^2,	 z+0.05), 0.56-z);
+		combinedcs = max(max(max(max(combinedcs1, combinedcs2), combinedcs3), combinedcs4),combinedcs5);
+		
+		joint1 = min(min(0.05^2 - (x+0.7)^2 - (z-0.3)^2, 0.5-y), y-0.3);
+		
+		joint2 = min(min(0.05^2 - (z-0.3)^2 - (y-0.3)^2, 0.755+x), -x);
+		
+		combinedjcs = max(combinedcs, joint);
+		combinedj2cs = max(combinedjcs, joint1);
+		combinedj3cs = max(combinedj2cs, joint2);
+				
+		cylindera=min(min(0.05^2 - (x-0.7)^2 - z^2, y-0.5), 0.7 - y);
+		spherea=0.05^2-(x-0.7)^2-(y-0.7)^2-z^2;
+		combinedcs1a = max(cylindera, spherea);
+		
+		cylinderb=min(min(0.05^2 - (x-0.7)^2 - (z-0.1)^2, y-0.5), 0.7 - y);
+		sphereb=0.05^2-(x-0.7)^2-(y-0.7)^2-(z-0.1)^2;
+		combinedcs2b = max(cylinderb, sphereb);
+		
+		cylinderc=min(min(0.05^2 - (x-0.7)^2 - (z-0.2)^2, y-0.5), 0.7 - y);
+		spherec=0.05^2-(x-0.7)^2-(y-0.7)^2-(z-0.2)^2;
+		combinedcs3c = max(cylinderc, spherec);
+		
+		cylinderd=min(min(0.05^2 - (x-0.7)^2 - (z-0.4)^2, y-0.5), 0.7 - y);
+		sphered=0.05^2-(x-0.7)^2-(y-0.7)^2-(z-0.4)^2;
+		combinedcs4d = max(cylinderd, sphered);
+		
+		cylindere=min(min(0.05^2 - (x-0.7)^2 - (z-0.5)^2, y-0.5), 0.7 - y);
+		spheree=0.05^2-(x-0.7)^2-(y-0.7)^2-(z-0.5)^2;
+		combinedcs5e = max(cylindere, spheree);
+		
+		jointa = min(min(0.05^2 - (x-0.7)^2 - (y-0.5)^2,	 z+0.05), 0.56-z);
+		combinedcsa = max(max(max(max(combinedcs1a, combinedcs2b), combinedcs3c), combinedcs4d),combinedcs5e);
+		
+		jointb = min(min(0.05^2 - (x-0.7)^2 - (z-0.3)^2, 0.5-y), y-0.3);
+
+		jointc = min(min(0.05^2 - (z-0.3)^2 - (y-0.3)^2, 0.755-x), x);
+		
+		combinedjcsa = max(combinedcsa, jointa);
+		combinedj2csb = max(combinedjcsa, jointb);
+		combinedj3csc = max(combinedj2csb, jointc);
+
+
+		eyes1 = min(min(0.1^2 - (x-0.2)^2 - (y+0.05)^2, z+0.1), 0.55-z);
+		eyes2 = min(min(0.1^2 - (x+0.2)^2 - (y+0.05)^2, z+0.1), 0.55-z);		
+		nose=min(((0.5/z)^2 - (x/0.3)^2 - (y/0.2 + 1)^2)-0.8, z-0.5);
+		combinednoseeyes = max(max(eyes1, eyes2),nose);
+		
+		hat = max(max(combinedCnFnHw2C, combinedj3cs), combinedj3csc);
+		hat1 = max(hat, combinednoseeyes);
+		
+		return hat1;
+	}"
+
+# Adjust the tight bounding box and an optimal resolution
+bboxCenter 0 0 0
+bboxSize 2 2 2
+resolution [70 70 70]
+
+ }     
+
+appearance FAppearance {
+material FMaterial { 
+# Variable color is defined for the CGS solid
+diffuseColor "r=cos(0.5*u*pi); g=sin(0.5*v*pi); b=0;"
+   }    }
+}
